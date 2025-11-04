@@ -1,8 +1,12 @@
 import React, { useState } from "react";
 import './TerrainGridMapper.css';
 
-const CELL_SIZE = 1000; // m² per cell
-const PIG_SPACE_PER_PIG = 10; // m² per pig
+const CELL_SIZE = 1000;
+const PIG_SPACE_PER_PIG = 10;
+const WEEKS_PER_SEASON = 12;
+const DAYS_PER_WEEK = 7;
+const PIG_WEIGHT_GAIN = 10;
+const CROP_GROWTH_RATE = 0.1;
 
 const TYPES = [
   { key: "empty", label: "Unused", className: "type-empty" },
@@ -12,27 +16,42 @@ const TYPES = [
   { key: "pig", label: "Pig Pen", className: "type-pig" },
 ];
 
+const MANAGERS = [
+  { key: "VM1", label: "VM1", img: "/images/VM1.jpg", cropMultiplier: 1.2, pigMultiplier: 1 },
+  { key: "VM2", label: "VM2", img: "/images/VM2.jpg", cropMultiplier: 1, pigMultiplier: 1.5 },
+  { key: "VFM1", label: "VFM1", img: "/images/VFM1.jpg", cropMultiplier: 1.5, pigMultiplier: 1.2 },
+  { key: "VFM2", label: "VFM2", img: "/images/VFM2.jpg", cropMultiplier: 1, pigMultiplier: 1.2 },
+];
+
 export default function TerrainGridMapper() {
-  const [totalArea, setTotalArea] = useState(200); // in 1,000 m²
+  const [totalArea, setTotalArea] = useState(200);
   const [cornArea, setCornArea] = useState(0);
   const [grassArea, setGrassArea] = useState(0);
   const [soyArea, setSoyArea] = useState(0);
   const [pigArea, setPigArea] = useState(0);
   const [cellsState, setCellsState] = useState([]);
   const [warning, setWarning] = useState("");
+  const [selectedManager, setSelectedManager] = useState(MANAGERS[0]);
 
-  const totalCells = totalArea; // 1 cell = 1,000 m²
+  const [week, setWeek] = useState(1);
+  const [day, setDay] = useState(7);
+  const [pigWeight, setPigWeight] = useState(20);
+  const [cropGrowth, setCropGrowth] = useState(0);
+
+  const totalCells = totalArea;
+  const cols = Math.ceil(Math.sqrt(totalCells));
+  const rows = Math.ceil(totalCells / cols);
+
+  const totalPigs = pigArea * Math.floor(CELL_SIZE / PIG_SPACE_PER_PIG);
+  const unusedLand = totalCells - (cornArea + grassArea + soyArea + pigArea);
 
   const generateGrid = () => {
     const sumAreas = cornArea + grassArea + soyArea + pigArea;
-
     if (sumAreas > totalArea) {
       setWarning("⚠️ Total allocated area exceeds total land area!");
       setCellsState([]);
       return;
-    } else {
-      setWarning("");
-    }
+    } else setWarning("");
 
     let cells = Array(totalCells).fill(0);
     let idx = 0;
@@ -45,11 +64,26 @@ export default function TerrainGridMapper() {
     setCellsState(cells);
   };
 
-  const cols = Math.ceil(Math.sqrt(totalCells));
-  const rows = Math.ceil(totalCells / cols);
+  const endTurn = () => {
+    setWeek(prev => prev + 1);
+    setDay(prev => prev + DAYS_PER_WEEK);
+    setPigWeight(prev => prev + PIG_WEIGHT_GAIN * selectedManager.pigMultiplier);
+    setCropGrowth(prev => Math.min(1, prev + CROP_GROWTH_RATE * selectedManager.cropMultiplier));
+  };
 
-  const totalPigs = pigArea * Math.floor(CELL_SIZE / PIG_SPACE_PER_PIG);
-  const unusedLand = totalCells - (cornArea + grassArea + soyArea + pigArea);
+  const resetFarm = () => {
+    setTotalArea(200);
+    setCornArea(0);
+    setGrassArea(0);
+    setSoyArea(0);
+    setPigArea(0);
+    setCellsState([]);
+    setWarning("");
+    setWeek(1);
+    setDay(7);
+    setPigWeight(20);
+    setCropGrowth(0);
+  };
 
   const exportCSV = () => {
     const rowsOut = ["index,row,col,type,label"];
@@ -70,11 +104,12 @@ export default function TerrainGridMapper() {
     URL.revokeObjectURL(url);
   };
 
+  // --- Render ---
   return (
     <div className="mapper-container">
       <header>
         <h1>Dak Nong Farm</h1>
-        <p>Enter total area and crop/pig areas. Each 1,000 m² = 1 square cell.</p>
+        <p>Each cell = 1,000 m². Manage your land, crops, and livestock week by week.</p>
       </header>
 
       <section className="controls">
@@ -100,24 +135,36 @@ export default function TerrainGridMapper() {
           <small>Total pigs possible: {totalPigs}</small>
         </label>
 
+        <p><strong>Unused land (1,000 m²):</strong> {unusedLand}</p>
         <p style={{ color: 'red', fontSize: '13px' }}>{warning}</p>
-        <p>Unused land (1,000 m²): {unusedLand}</p>
+
+        <section className="manager-selection">
+          <h3>Select Farm Manager:</h3>
+          <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
+            {MANAGERS.map(manager => (
+              <div key={manager.key} style={{ textAlign: 'center', cursor: 'pointer' }}
+                onClick={() => setSelectedManager(manager)}>
+                <img src={manager.img} alt={manager.label} width={80} style={{
+                  border: selectedManager.key === manager.key ? '3px solid #f59e0b' : '1px solid #ccc',
+                  borderRadius: '6px'
+                }} />
+                <div>{manager.label}</div>
+              </div>
+            ))}
+          </div>
+        </section>
 
         <div className="buttons">
           <button onClick={generateGrid}>Generate Grid ({totalCells} cells)</button>
-          <button onClick={() => {
-            setTotalArea(200);
-            setCornArea(0);
-            setGrassArea(0);
-            setSoyArea(0);
-            setPigArea(0);
-            setCellsState([]);
-            setWarning("");
-          }}>Reset</button>
+          <button onClick={endTurn}>End Turn (1 Week)</button>
+          <button onClick={resetFarm}>Reset</button>
           <button onClick={exportCSV} disabled={cellsState.length === 0}>Export CSV</button>
         </div>
 
-        <p className="grid-info">{rows} rows × {cols} cols</p>
+        <p className="grid-info">
+          Week: {week} | Days Passed: {day} | Crop Growth: {(cropGrowth * 100).toFixed(0)}% | 
+          Avg Pig Weight: {pigWeight.toFixed(1)} kg
+        </p>
       </section>
 
       <section className="grid-section">

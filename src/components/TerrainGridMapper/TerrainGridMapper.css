@@ -2,90 +2,147 @@
   padding: 20px;
   font-family: Arial, sans-serif;
   min-height: 100vh;
-  background: #f8fafc;
+  background: #fcf8f8;
 }
 
-header h1 { font-size: 24px; margin-bottom: 4px; }
-header p { font-size: 14px; color: #555; }
+header h1 { 
+  font-size: 24px; 
+  margin-bottom: 4px; 
+}
+header p { 
+  font-size: 14px; 
+  color: #555; 
+}
 
 .controls {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  grid-template-columns: repeat(5, 1fr);
   gap: 10px;
   margin-bottom: 20px;
   padding: 15px;
   border-radius: 10px;
-  background:#fff;
-  box-shadow:0 2px 6px rgba(0,0,0,0.1);
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  align-items: start;
 }
 
 .controls label {
-  display:flex;
-  flex-direction:column;
-  font-size:13px;
+  display: flex;
+  flex-direction: column;
+  font-size: 13px;
 }
 
 .controls input {
-  margin-top:4px;
-  padding:6px 8px;
-  border-radius:5px;
-  border:1px solid #ccc;
+  margin-top: 4px;
+  padding: 6px 8px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
 }
 
-.controls small { font-size: 12px; color: #333; }
+.controls small {
+  font-size: 12px;
+  color: #333;
+}
+
+.controls p {
+  font-size: 13px;
+  margin: 0;
+  align-self: center;
+  grid-column: span 1;
+}
 
 .buttons {
-  grid-column:1/-1;
-  display:flex;
-  gap:10px;
-  margin-top:10px;
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
 }
 
 .buttons button {
-  padding:6px 12px;
-  border-radius:5px;
-  border:none;
-  cursor:pointer;
-  transition:0.2s;
+  padding: 6px 12px;
+  border-radius: 5px;
+  border: none;
+  cursor: pointer;
+  transition: 0.2s;
+  background: #f3f4f6;
 }
 
-.buttons button:hover { box-shadow:0 2px 6px rgba(0,0,0,0.2); }
+.buttons button:hover {
+  background: #e5e7eb;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
 
-.grid-info { font-size:12px; color:#555; grid-column:1/-1; }
+.grid-info {
+  font-size: 12px;
+  color: #555;
+  grid-column: 1 / -1;
+  margin-top: 5px;
+}
 
-.grid-section { overflow:auto; max-height:65vh; }
+.manager-selection {
+  grid-column: 1 / -1;
+  margin-top: 10px;
+}
 
-.no-grid { color:#777; padding:20px; }
+.manager-selection h3 { 
+  margin: 10px 0; 
+  font-size: 14px; 
+}
+
+.manager-selection img { 
+  transition: 0.2s; 
+  border-radius: 6px;
+}
+
+.manager-selection img:hover { 
+  transform: scale(1.05); 
+}
+
+.grid-section { 
+  overflow: auto; 
+  max-height: 65vh; 
+  background: #fff;
+  padding: 10px;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.no-grid { 
+  color: #777; 
+  padding: 20px; 
+  text-align: center;
+}
 
 .grid {
-  display:grid;
-  gap:0;
-  justify-content:center;
+  display: grid;
+  gap: 0;
+  justify-content: center;
 }
 
 .cell {
-  position:relative;
-  aspect-ratio:1/1;
-  width:25px;
-  height:25px;
-  border-radius:4px;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  cursor:pointer;
-  font-size:6px;
-  font-weight:bold;
-  border:1px solid #ccc;
-  transition:0.15s;
+  position: relative;
+  aspect-ratio: 1/1;
+  width: 25px;
+  height: 25px;
+  border-radius: 4px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  font-size: 6px;
+  font-weight: bold;
+  border: 1px solid #ccc;
+  transition: 0.15s;
 }
 
 .cell:hover {
-  transform:translateY(-2px);
-  box-shadow:0 4px 8px rgba(0,0,0,0.15);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
 }
 
 .type-empty { background: #fff; }
-.type-corn { background: linear-gradient(135deg, #fcd34d, #fbbf24); border-color:#f59e0b; }
-.type-grass { background: linear-gradient(135deg, #bef264, #84cc16); border-color:#65a30d; }
-.type-soy { background: linear-gradient(135deg, #a7f3d0, #34d399); border-color:#059669; }
+.type-corn { background: linear-gradient(135deg, #fcd34d, #fbbf24); border-color: #f59e0b; }
+.type-grass { background: linear-gradient(135deg, #bef264, #84cc16); border-color: #65a30d; }
+.type-soy { background: linear-gradient(135deg, #a7f3d0, #34d399); border-color: #059669; }
 .type-pig { background: linear-gradient(135deg, #fca5a5, #f87171); border-color: #ef4444; }
