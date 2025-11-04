@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import './TerrainGridMapper.css';
 
-const CELL_SIZE = 1000; // 1 cell = 1,000 m²
+const CELL_SIZE = 1000; // m² per cell
+const PIG_SPACE_PER_PIG = 10; // m² per pig
 
 const TYPES = [
   { key: "empty", label: "Unused", className: "type-empty" },
@@ -12,18 +13,30 @@ const TYPES = [
 ];
 
 export default function TerrainGridMapper() {
-  const [totalArea, setTotalArea] = useState(200); // in 1,000 m² units
+  const [totalArea, setTotalArea] = useState(200); // in 1,000 m²
   const [cornArea, setCornArea] = useState(0);
   const [grassArea, setGrassArea] = useState(0);
   const [soyArea, setSoyArea] = useState(0);
   const [pigArea, setPigArea] = useState(0);
   const [cellsState, setCellsState] = useState([]);
+  const [warning, setWarning] = useState("");
+
+  const totalCells = totalArea; // 1 cell = 1,000 m²
 
   const generateGrid = () => {
-    const totalCells = totalArea;
-    let cells = Array(totalCells).fill(0); // start with unused
+    const sumAreas = cornArea + grassArea + soyArea + pigArea;
 
+    if (sumAreas > totalArea) {
+      setWarning("⚠️ Total allocated area exceeds total land area!");
+      setCellsState([]);
+      return;
+    } else {
+      setWarning("");
+    }
+
+    let cells = Array(totalCells).fill(0);
     let idx = 0;
+
     for (let i = 0; i < cornArea && idx < totalCells; i++, idx++) cells[idx] = 1;
     for (let i = 0; i < grassArea && idx < totalCells; i++, idx++) cells[idx] = 2;
     for (let i = 0; i < soyArea && idx < totalCells; i++, idx++) cells[idx] = 3;
@@ -32,14 +45,15 @@ export default function TerrainGridMapper() {
     setCellsState(cells);
   };
 
-  const unusedLand = Math.max(0, totalArea - (cornArea + grassArea + soyArea + pigArea));
+  const cols = Math.ceil(Math.sqrt(totalCells));
+  const rows = Math.ceil(totalCells / cols);
 
-  const cols = Math.ceil(Math.sqrt(totalArea));
-  const rows = Math.ceil(totalArea / cols);
+  const totalPigs = pigArea * Math.floor(CELL_SIZE / PIG_SPACE_PER_PIG);
+  const unusedLand = totalCells - (cornArea + grassArea + soyArea + pigArea);
 
   const exportCSV = () => {
     const rowsOut = ["index,row,col,type,label"];
-    for (let i = 0; i < totalArea; i++) {
+    for (let i = 0; i < totalCells; i++) {
       const r = Math.floor(i / cols) + 1;
       const c = (i % cols) + 1;
       const tIdx = cellsState[i] ?? 0;
@@ -51,7 +65,7 @@ export default function TerrainGridMapper() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `terrain_map_${totalArea}000m2_cells.csv`;
+    a.download = `terrain_map_${totalArea * 1000}m2_cells_${totalCells}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -60,7 +74,7 @@ export default function TerrainGridMapper() {
     <div className="mapper-container">
       <header>
         <h1>Dak Nong Farm</h1>
-        <p>Each 1 cell = 1,000 m². Total area must equal sum of crop & pig areas.</p>
+        <p>Enter total area and crop/pig areas. Each 1,000 m² = 1 square cell.</p>
       </header>
 
       <section className="controls">
@@ -83,19 +97,14 @@ export default function TerrainGridMapper() {
         <label>
           Pig area (1,000 m²)
           <input type="number" value={pigArea} onChange={e => setPigArea(Number(e.target.value))} />
-        </label>
-        <label>
-          Unused land (1,000 m²)
-          <input type="number" value={unusedLand} readOnly />
+          <small>Total pigs possible: {totalPigs}</small>
         </label>
 
+        <p style={{ color: 'red', fontSize: '13px' }}>{warning}</p>
+        <p>Unused land (1,000 m²): {unusedLand}</p>
+
         <div className="buttons">
-          <button
-            onClick={generateGrid}
-            disabled={(cornArea + grassArea + soyArea + pigArea) > totalArea}
-          >
-            Generate Grid ({totalArea} cells)
-          </button>
+          <button onClick={generateGrid}>Generate Grid ({totalCells} cells)</button>
           <button onClick={() => {
             setTotalArea(200);
             setCornArea(0);
@@ -103,6 +112,7 @@ export default function TerrainGridMapper() {
             setSoyArea(0);
             setPigArea(0);
             setCellsState([]);
+            setWarning("");
           }}>Reset</button>
           <button onClick={exportCSV} disabled={cellsState.length === 0}>Export CSV</button>
         </div>
