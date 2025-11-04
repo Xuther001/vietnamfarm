@@ -86,8 +86,8 @@ header p { font-size: 14px; color: #555; }
   border: 1px solid #ccc;
 }
 
-/* Crop types */
 .type-empty { background: #fff; }
 .type-corn { background: linear-gradient(135deg, #fcd34d, #fbbf24); border-color:#f59e0b; }
 .type-grass { background: linear-gradient(135deg, #bef264, #84cc16); border-color:#65a30d; }
 .type-soy { background: linear-gradient(135deg, #a7f3d0, #34d399); border-color:#059669; }
+.type-pig { background: linear-gradient(135deg, #fca5a5, #f87171); border-color: #ef4444; }
