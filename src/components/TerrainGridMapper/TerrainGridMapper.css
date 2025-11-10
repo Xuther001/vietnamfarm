@@ -67,8 +67,35 @@ button:hover {
 .type-soy { background: #8d6e63; }
 .type-pig { background: #ef5350; }
 
-.grid-info {
-  grid-column: 1 / -1;
+/* .grid-info {
   font-size: 13px;
   text-align: center;
+} */
+
+.grid-info {
+  position: absolute;
+  top: 90%;
+  left: 50px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 13px;
+  color: #333;
+}
+
+.grid-section {
+  position: absolute;
+  top: 95%;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.info-container {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 20px;
+  position: absolute;
+  top: 60%;
+  left: 2%;
+  flex-wrap: nowrap;
 }

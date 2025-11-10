@@ -134,25 +134,28 @@ export default function TerrainGridMapper() {
         <p><strong>Unused land:</strong> {unusedLand}</p>
         {warning && <p className="warning">{warning}</p>}
 
-        <Summary
-          totalLand={totalArea * 1000}
-          totalPigs={totalPigs}
-          crops={{
-            corn: Math.round(cornArea * 100 * cropGrowth),
-            grass: Math.round(grassArea * 100 * cropGrowth),
-            soy: Math.round(soyArea * 100 * cropGrowth)
-          }}
-          funds={funds}
-        />
+        <div className="info-container">
+          <Summary
+            totalLand={totalArea * 1000}
+            totalPigs={totalPigs}
+            crops={{
+              corn: Math.round(cornArea * 100 * cropGrowth),
+              grass: Math.round(grassArea * 100 * cropGrowth),
+              soy: Math.round(soyArea * 100 * cropGrowth)
+            }}
+            funds={funds}
+          />
 
-        <ManagerSelector selectedManager={selectedManager} onSelect={setSelectedManager} />
-        <Marketplace
-          funds={funds}
-          feedStock={feedStock}
-          feedPrice={feedPrice}
-          setFunds={setFunds}
-          setFeedStock={setFeedStock}
-        />
+          <ManagerSelector selectedManager={selectedManager} onSelect={setSelectedManager} />
+
+          <Marketplace
+            funds={funds}
+            feedStock={feedStock}
+            feedPrice={feedPrice}
+            setFunds={setFunds}
+            setFeedStock={setFeedStock}
+          />
+        </div>
 
         <div className="buttons">
           <button onClick={handleGenerate}>Generate Grid</button>
