@@ -128,7 +128,6 @@ export default function TerrainGridMapper() {
         <label>
           Pig pens
           <input type="number" value={pigArea} onChange={(e) => setPigArea(Number(e.target.value))} />
-          <small>Total pigs: {totalPigs}</small>
         </label>
 
         <p><strong>Unused land:</strong> {unusedLand}</p>
@@ -157,7 +156,7 @@ export default function TerrainGridMapper() {
           />
         </div>
 
-        <div className="buttons">
+        <div className="actions">
           <button onClick={handleGenerate}>Generate Grid</button>
           <button onClick={handleEndTurn}>End Turn</button>
           <button onClick={handleReset}>Reset</button>
