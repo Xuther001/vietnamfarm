@@ -1,0 +1,32 @@
+.manager-section {
+  grid-column: 1 / -1;
+  background: #fff8e1;
+  padding: 10px;
+  border-radius: 8px;
+}
+
+.manager-list {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.manager-card {
+  border: 2px solid transparent;
+  padding: 5px;
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: center;
+  transition: 0.2s;
+}
+
+.manager-card.active {
+  border-color: #ffa726;
+}
+
+.manager-card img {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 6px;
+}
