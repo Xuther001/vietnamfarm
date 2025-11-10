@@ -38,12 +38,22 @@ export default function TerrainGridMapper() {
   const [pigWeight, setPigWeight] = useState(20);
   const [cropGrowth, setCropGrowth] = useState(0);
 
+  const [funds, setFunds] = useState(10000);
+  const [feedStock, setFeedStock] = useState(0);
+  const [feedPrice, setFeedPrice] = useState(5);
+  const [feedConsumptionPerPigPerWeek] = useState(7);
+
   const totalCells = totalArea;
   const cols = Math.ceil(Math.sqrt(totalCells));
   const rows = Math.ceil(totalCells / cols);
 
   const totalPigs = pigArea * Math.floor(CELL_SIZE / PIG_SPACE_PER_PIG);
   const unusedLand = totalCells - (cornArea + grassArea + soyArea + pigArea);
+
+  const cropYieldPerCell = 100;
+  const cornKg = (cornArea * cropYieldPerCell * cropGrowth).toFixed(0);
+  const grassKg = (grassArea * cropYieldPerCell * cropGrowth).toFixed(0);
+  const soyKg = (soyArea * cropYieldPerCell * cropGrowth).toFixed(0);
 
   const generateGrid = () => {
     const sumAreas = cornArea + grassArea + soyArea + pigArea;
@@ -65,10 +75,27 @@ export default function TerrainGridMapper() {
   };
 
   const endTurn = () => {
+    const pigs = totalPigs;
+    const feedNeeded = pigs * feedConsumptionPerPigPerWeek;
+
+    if (feedStock < feedNeeded) {
+      setWarning("⚠️ Not enough feed! Pig growth reduced this week.");
+      setPigWeight(prev => prev + (PIG_WEIGHT_GAIN * 0.5 * selectedManager.pigMultiplier));
+      setFeedStock(0);
+    } else {
+      setWarning("");
+      setFeedStock(prev => prev - feedNeeded);
+      setPigWeight(prev => prev + PIG_WEIGHT_GAIN * selectedManager.pigMultiplier);
+    }
+
+    setCropGrowth(prev => Math.min(1, prev + CROP_GROWTH_RATE * selectedManager.cropMultiplier));
     setWeek(prev => prev + 1);
     setDay(prev => prev + DAYS_PER_WEEK);
-    setPigWeight(prev => prev + PIG_WEIGHT_GAIN * selectedManager.pigMultiplier);
-    setCropGrowth(prev => Math.min(1, prev + CROP_GROWTH_RATE * selectedManager.cropMultiplier));
+
+    setFeedPrice(prev => {
+      const newPrice = (prev * (0.9 + Math.random() * 0.2)).toFixed(2);
+      return Math.max(2, Math.min(10, parseFloat(newPrice)));
+    });
   };
 
   const resetFarm = () => {
@@ -83,6 +110,9 @@ export default function TerrainGridMapper() {
     setDay(7);
     setPigWeight(20);
     setCropGrowth(0);
+    setFunds(10000);
+    setFeedStock(0);
+    setFeedPrice(5);
   };
 
   const exportCSV = () => {
@@ -104,7 +134,20 @@ export default function TerrainGridMapper() {
     URL.revokeObjectURL(url);
   };
 
-  // --- Render ---
+  const handleBuyFeed = () => {
+    const input = document.getElementById("feedInput");
+    const amount = Number(input.value);
+    if (amount <= 0) return;
+    const cost = amount * feedPrice;
+    if (cost > funds) {
+      alert("❌ Not enough funds to buy that much feed!");
+      return;
+    }
+    setFunds(prev => prev - cost);
+    setFeedStock(prev => prev + amount);
+    input.value = "";
+  };
+
   return (
     <div className="mapper-container">
       <header>
@@ -151,6 +194,32 @@ export default function TerrainGridMapper() {
                 <div>{manager.label}</div>
               </div>
             ))}
+          </div>
+        </section>
+
+        <section className="summary-panel">
+          <h3>Farm Summary</h3>
+          <p><strong>Total Land:</strong> {totalArea * 1000} m²</p>
+          <p><strong>Total Pigs:</strong> {totalPigs}</p>
+          <p><strong>Corn:</strong> {cornKg} kg | <strong>Grass:</strong> {grassKg} kg | <strong>Soy:</strong> {soyKg} kg</p>
+          <p><strong>Funds:</strong> ${funds.toLocaleString()}</p>
+        </section>
+
+        <section className="marketplace">
+          <h3>Pig Feed Marketplace</h3>
+          <p>Funds: ${funds.toLocaleString()} | Feed in Storage: {feedStock} kg | Price: ${feedPrice}/kg</p>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+            <label>
+              Buy Feed (kg)
+              <input
+                type="number"
+                min="0"
+                id="feedInput"
+                placeholder="Enter amount"
+                style={{ marginLeft: '5px', width: '80px' }}
+              />
+            </label>
+            <button onClick={handleBuyFeed}>Buy Feed</button>
           </div>
         </section>
 
