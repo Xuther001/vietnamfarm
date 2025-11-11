@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import "./TerrainGridMapper.css";
 import Summary from "../Summary/Summary";
 import PigPen from "../PigPen/PigPen";
+import MessageLog from "../MessageLog/MessageLog";
 
 import {
   TYPES,
@@ -38,10 +39,12 @@ export default function TerrainGridMapper() {
   const [feedStock, setFeedStock] = useState(0);
   const [feedPrice, setFeedPrice] = useState(5);
 
-  // 🐷 Pig logic
-  const [pigPrice, setPigPrice] = useState(150); // price per pig (changes weekly)
-  const [pigBatches, setPigBatches] = useState([]); // list of pig batches
-  const [purchaseCount, setPurchaseCount] = useState(0); // number to buy this turn
+  const [pigPrice, setPigPrice] = useState(150);
+  const [pigBatches, setPigBatches] = useState([]);
+  const [purchaseCount, setPurchaseCount] = useState(0);
+
+  const [messages, setMessages] = useState([]);
+  const logMessage = (text) => setMessages((prev) => [...prev, text]);
 
   const totalPigs = pigBatches.reduce((sum, b) => sum + b.count, 0);
   const totalCells = totalArea;
@@ -50,27 +53,62 @@ export default function TerrainGridMapper() {
 
   const handleGenerate = () => {
     const result = generateGrid(totalArea, cornArea, grassArea, soyArea, 0);
-    if (result.warning) setWarning(result.warning);
+    if (result.warning) logMessage(result.warning);
     setCellsState(result.cells);
   };
 
   const handleBuyPigs = () => {
-    if (purchaseCount <= 0) return setWarning("Enter how many pigs to buy.");
+    const existingBatchIndex = pigBatches.findIndex(
+      (b) => b.age === 0
+    );
+
+    if (purchaseCount === 0 && existingBatchIndex !== -1) {
+      const previousBatch = pigBatches[existingBatchIndex];
+      setFunds((prev) => prev + previousBatch.count * previousBatch.price);
+      const updated = [...pigBatches];
+      updated.splice(existingBatchIndex, 1);
+      setPigBatches(updated);
+      logMessage(`Refunded ${previousBatch.count} pigs for this turn.`);
+      setPurchaseCount(0);
+      return;
+    }
+
+    if (purchaseCount <= 0) {
+      return logMessage("Enter how many pigs to buy.");
+    }
+
     const totalCost = purchaseCount * pigPrice;
-    if (funds < totalCost) return setWarning("Not enough funds to buy pigs.");
 
-    setFunds((prev) => prev - totalCost);
+    if (existingBatchIndex !== -1) {
+      const previousBatch = pigBatches[existingBatchIndex];
+      const newFunds = funds + previousBatch.count * previousBatch.price;
+      if (newFunds < totalCost) {
+        return logMessage("Not enough funds to buy pigs.");
+      }
+      const updated = [...pigBatches];
+      updated[existingBatchIndex] = {
+        id: Math.random().toString(36).slice(2),
+        count: purchaseCount,
+        age: 0,
+        price: pigPrice,
+      };
+      setPigBatches(updated);
+      setFunds(newFunds - totalCost);
+      logMessage(`Bought ${purchaseCount} pigs (replacing previous batch).`);
+    } else {
+      if (funds < totalCost) return logMessage("Not enough funds to buy pigs.");
+      const newBatch = {
+        id: Math.random().toString(36).slice(2),
+        count: purchaseCount,
+        age: 0,
+        price: pigPrice,
+      };
+      setPigBatches((prev) => [...prev, newBatch]);
+      setFunds((prev) => prev - totalCost);
+      logMessage(`Bought ${purchaseCount} pigs.`);
+    }
 
-    const newBatch = {
-      id: Math.random().toString(36).slice(2),
-      count: purchaseCount,
-      age: 0,
-      price: pigPrice,
-    };
-
-    setPigBatches((prev) => [...prev, newBatch]);
     setPurchaseCount(0);
-    setWarning("");
   };
 
   const handleEndTurn = () => {
@@ -111,7 +149,8 @@ export default function TerrainGridMapper() {
     setFeedPrice(newFeedPrice);
     setPigPrice(newPigPrice);
     setPigBatches(agedBatches);
-    setWarning(warningMessage);
+
+    if (warningMessage) logMessage(warningMessage);
   };
 
   const handleExport = () => exportCSVLogic(cellsState, TYPES, totalArea, cols);
@@ -123,7 +162,6 @@ export default function TerrainGridMapper() {
     setGrassArea(reset.grassArea);
     setSoyArea(reset.soyArea);
     setCellsState([]);
-    setWarning("");
     setWeek(reset.week);
     setDay(reset.day);
     setPigWeight(reset.pigWeight);
@@ -132,6 +170,8 @@ export default function TerrainGridMapper() {
     setFeedStock(reset.feedStock);
     setFeedPrice(reset.feedPrice);
     setPigBatches([]);
+    setPurchaseCount(0);
+    setMessages([]);
   };
 
   return (
@@ -176,7 +216,6 @@ export default function TerrainGridMapper() {
         </label>
 
         <p><strong>Unused land:</strong> {unusedLand}</p>
-        {warning && <p className="warning">{warning}</p>}
 
         <div className="info-container">
           <Summary
@@ -202,11 +241,11 @@ export default function TerrainGridMapper() {
             setFunds={setFunds}
             setFeedStock={setFeedStock}
           />
-          
+
           <div className="pig-purchase">
             <h4>Pig Market</h4>
             <p>
-              Current Pig Price: <strong>{pigPrice} ₳ per pig</strong>
+              Current Pig Price: <strong>${pigPrice} per pig</strong>
             </p>
             <input
               type="number"
@@ -216,6 +255,8 @@ export default function TerrainGridMapper() {
             />
             <button onClick={handleBuyPigs}>Buy Pigs</button>
           </div>
+
+          <MessageLog messages={messages} />
         </div>
 
         <div className="actions">
