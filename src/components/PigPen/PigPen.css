@@ -1,0 +1,38 @@
+.pig-pen {
+  position: relative;
+  width: 250px;
+  height: 250px;
+  background: #fbe9e7;
+  border: 5px solid #8d6e63;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+.pig-gif {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  animation: wander 8s infinite ease-in-out alternate;
+}
+
+/* Pigs wander left-right and up-down */
+@keyframes wander {
+  0%   { transform: translate(0, 0) scaleX(1); }
+  20%  { transform: translate(30px, 10px) scaleX(1); }
+  40%  { transform: translate(-40px, 20px) scaleX(-1); }
+  60%  { transform: translate(20px, -15px) scaleX(1); }
+  80%  { transform: translate(-25px, -10px) scaleX(-1); }
+  100% { transform: translate(0, 0) scaleX(1); }
+}
+
+@media (max-width: 768px) {
+  .pig-pen {
+    width: 180px;
+    height: 180px;
+  }
+  .pig-gif {
+    width: 30px;
+    height: 30px;
+  }
+}

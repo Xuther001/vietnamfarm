@@ -1,13 +1,13 @@
 import React, { useState } from "react";
 import "./TerrainGridMapper.css";
 import Summary from "../Summary/Summary";
+import PigPen from "../PigPen/PigPen";
 
 import {
   TYPES,
   MANAGERS,
   CELL_SIZE,
   DAYS_PER_WEEK,
-  PIG_SPACE_PER_PIG,
 } from "../../utils/constants";
 
 import {
@@ -25,7 +25,6 @@ export default function TerrainGridMapper() {
   const [cornArea, setCornArea] = useState(0);
   const [grassArea, setGrassArea] = useState(0);
   const [soyArea, setSoyArea] = useState(0);
-  const [pigArea, setPigArea] = useState(0);
   const [cellsState, setCellsState] = useState([]);
   const [warning, setWarning] = useState("");
   const [selectedManager, setSelectedManager] = useState(MANAGERS[0]);
@@ -39,18 +38,49 @@ export default function TerrainGridMapper() {
   const [feedStock, setFeedStock] = useState(0);
   const [feedPrice, setFeedPrice] = useState(5);
 
+  // 🐷 Pig logic
+  const [pigPrice, setPigPrice] = useState(150); // price per pig (changes weekly)
+  const [pigBatches, setPigBatches] = useState([]); // list of pig batches
+  const [purchaseCount, setPurchaseCount] = useState(0); // number to buy this turn
+
+  const totalPigs = pigBatches.reduce((sum, b) => sum + b.count, 0);
   const totalCells = totalArea;
   const cols = Math.ceil(Math.sqrt(totalCells));
-  const totalPigs = pigArea * Math.floor(CELL_SIZE / PIG_SPACE_PER_PIG);
-  const unusedLand = totalCells - (cornArea + grassArea + soyArea + pigArea);
+  const unusedLand = totalCells - (cornArea + grassArea + soyArea);
 
   const handleGenerate = () => {
-    const result = generateGrid(totalArea, cornArea, grassArea, soyArea, pigArea);
+    const result = generateGrid(totalArea, cornArea, grassArea, soyArea, 0);
     if (result.warning) setWarning(result.warning);
     setCellsState(result.cells);
   };
 
+  const handleBuyPigs = () => {
+    if (purchaseCount <= 0) return setWarning("Enter how many pigs to buy.");
+    const totalCost = purchaseCount * pigPrice;
+    if (funds < totalCost) return setWarning("Not enough funds to buy pigs.");
+
+    setFunds((prev) => prev - totalCost);
+
+    const newBatch = {
+      id: Math.random().toString(36).slice(2),
+      count: purchaseCount,
+      age: 0,
+      price: pigPrice,
+    };
+
+    setPigBatches((prev) => [...prev, newBatch]);
+    setPurchaseCount(0);
+    setWarning("");
+  };
+
   const handleEndTurn = () => {
+    const newPigPrice = Math.round(100 + Math.random() * 100);
+
+    const agedBatches = pigBatches.map((b) => ({
+      ...b,
+      age: b.age + 7,
+    }));
+
     const {
       nextWeek,
       nextDay,
@@ -59,7 +89,7 @@ export default function TerrainGridMapper() {
       nextFunds,
       nextFeed,
       warningMessage,
-      newPrice,
+      newPrice: newFeedPrice,
     } = endTurnLogic({
       week,
       day,
@@ -78,18 +108,20 @@ export default function TerrainGridMapper() {
     setCropGrowth(nextCropGrowth);
     setFunds(nextFunds);
     setFeedStock(nextFeed);
-    setFeedPrice(newPrice);
+    setFeedPrice(newFeedPrice);
+    setPigPrice(newPigPrice);
+    setPigBatches(agedBatches);
     setWarning(warningMessage);
   };
 
   const handleExport = () => exportCSVLogic(cellsState, TYPES, totalArea, cols);
+
   const handleReset = () => {
     const reset = resetFarmLogic();
     setTotalArea(reset.totalArea);
     setCornArea(reset.cornArea);
     setGrassArea(reset.grassArea);
     setSoyArea(reset.soyArea);
-    setPigArea(reset.pigArea);
     setCellsState([]);
     setWarning("");
     setWeek(reset.week);
@@ -99,6 +131,7 @@ export default function TerrainGridMapper() {
     setFunds(reset.funds);
     setFeedStock(reset.feedStock);
     setFeedPrice(reset.feedPrice);
+    setPigBatches([]);
   };
 
   return (
@@ -111,23 +144,35 @@ export default function TerrainGridMapper() {
       <section className="controls">
         <label>
           Total area
-          <input type="number" value={totalArea} onChange={(e) => setTotalArea(Number(e.target.value))} />
+          <input
+            type="number"
+            value={totalArea}
+            onChange={(e) => setTotalArea(Number(e.target.value))}
+          />
         </label>
         <label>
           Corn
-          <input type="number" value={cornArea} onChange={(e) => setCornArea(Number(e.target.value))} />
+          <input
+            type="number"
+            value={cornArea}
+            onChange={(e) => setCornArea(Number(e.target.value))}
+          />
         </label>
         <label>
           Grass
-          <input type="number" value={grassArea} onChange={(e) => setGrassArea(Number(e.target.value))} />
+          <input
+            type="number"
+            value={grassArea}
+            onChange={(e) => setGrassArea(Number(e.target.value))}
+          />
         </label>
         <label>
           Soy
-          <input type="number" value={soyArea} onChange={(e) => setSoyArea(Number(e.target.value))} />
-        </label>
-        <label>
-          Pig pens
-          <input type="number" value={pigArea} onChange={(e) => setPigArea(Number(e.target.value))} />
+          <input
+            type="number"
+            value={soyArea}
+            onChange={(e) => setSoyArea(Number(e.target.value))}
+          />
         </label>
 
         <p><strong>Unused land:</strong> {unusedLand}</p>
@@ -140,12 +185,15 @@ export default function TerrainGridMapper() {
             crops={{
               corn: Math.round(cornArea * 100 * cropGrowth),
               grass: Math.round(grassArea * 100 * cropGrowth),
-              soy: Math.round(soyArea * 100 * cropGrowth)
+              soy: Math.round(soyArea * 100 * cropGrowth),
             }}
             funds={funds}
           />
 
-          <ManagerSelector selectedManager={selectedManager} onSelect={setSelectedManager} />
+          <ManagerSelector
+            selectedManager={selectedManager}
+            onSelect={setSelectedManager}
+          />
 
           <Marketplace
             funds={funds}
@@ -154,17 +202,34 @@ export default function TerrainGridMapper() {
             setFunds={setFunds}
             setFeedStock={setFeedStock}
           />
+          
+          <div className="pig-purchase">
+            <h4>Pig Market</h4>
+            <p>
+              Current Pig Price: <strong>{pigPrice} ₳ per pig</strong>
+            </p>
+            <input
+              type="number"
+              placeholder="Enter number of pigs"
+              value={purchaseCount}
+              onChange={(e) => setPurchaseCount(Number(e.target.value))}
+            />
+            <button onClick={handleBuyPigs}>Buy Pigs</button>
+          </div>
         </div>
 
         <div className="actions">
           <button onClick={handleGenerate}>Generate Grid</button>
           <button onClick={handleEndTurn}>End Turn</button>
           <button onClick={handleReset}>Reset</button>
-          <button onClick={handleExport} disabled={!cellsState.length}>Export CSV</button>
+          <button onClick={handleExport} disabled={!cellsState.length}>
+            Export CSV
+          </button>
         </div>
 
         <p className="grid-info">
-          Week {week} | Day {day} | Crop Growth {(cropGrowth * 100).toFixed(0)}% | Pig Weight {pigWeight.toFixed(1)} kg
+          Week {week} | Day {day} | Crop Growth {(cropGrowth * 100).toFixed(0)}% |{" "}
+          Pig Weight {pigWeight.toFixed(1)} kg | Total Pigs {totalPigs}
         </p>
       </section>
 
@@ -172,17 +237,43 @@ export default function TerrainGridMapper() {
         {cellsState.length === 0 ? (
           <p>No grid yet — press "Generate Grid".</p>
         ) : (
-          <div className="grid" style={{ gridTemplateColumns: `repeat(${cols}, 25px)` }}>
+          <div
+            className="grid"
+            style={{ gridTemplateColumns: `repeat(${cols}, 25px)` }}
+          >
             {cellsState.map((cell, i) => {
               const type = TYPES[cell ?? 0];
               return (
-                <div key={i} className={`cell ${type.className}`} title={type.label}>
+                <div
+                  key={i}
+                  className={`cell ${type.className}`}
+                  title={type.label}
+                >
                   <span>{i + 1}</span>
                 </div>
               );
             })}
           </div>
         )}
+
+        <div style={{ marginTop: "40px", display: "flex", justifyContent: "center" }}>
+          <PigPen totalPigs={totalPigs} />
+        </div>
+
+        <div className="pig-batch-info">
+          <h4>Pig Batches</h4>
+          {pigBatches.length === 0 ? (
+            <p>No pigs yet.</p>
+          ) : (
+            <ul>
+              {pigBatches.map((b) => (
+                <li key={b.id}>
+                  {b.count} pigs bought at {b.price} ₳ each — Age: {b.age} days
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </section>
     </div>
   );

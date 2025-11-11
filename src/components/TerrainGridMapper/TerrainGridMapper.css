@@ -110,3 +110,40 @@ button:hover {
   left: 2%;
   flex-wrap: nowrap;
 }
+
+.pig-purchase {
+  display: inline-block;
+  vertical-align: top;
+  width: 400px;
+  height: 180px;
+  margin: 0;
+  background: #e7f5ff;
+  border-radius: 8px;
+  padding: 10px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.pig-purchase input {
+  width: 100%;
+  padding: 4px;
+  margin-top: 5px;
+  margin-bottom: 5px;
+}
+
+.pig-purchase button {
+  background: #ff9800;
+}
+
+.pig-purchase button:hover {
+  background: #f57c00;
+}
+
+.pig-batch-info {
+  text-align: center;
+  margin-top: 20px;
+}
+
+.pig-batch-info ul {
+  list-style: none;
+  padding: 0;
+}
